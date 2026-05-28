@@ -1,0 +1,10 @@
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+[[edge_functions]]
+  function = "analyze"
+  path = "/api/analyze"
+
+[template.environment]
+  OPENAI_API_KEY = "Set your OpenAI API key here"
