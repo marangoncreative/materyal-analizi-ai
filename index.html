@@ -1,47 +1,360 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#166534" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="RE-Vision" />
-    <meta name="description" content="AI-powered material analysis for a sustainable future" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <link rel="manifest" href="./manifest.json" />
-    <link rel="apple-touch-icon" href="./logo.png" />
-    <title>RE-Vision App</title>
-    <style>
-      /* Prevent pull-to-refresh and overscroll on mobile */
-      html, body {
-        overscroll-behavior: none;
-        touch-action: pan-x pan-y;
-      }
-      /* Hide scrollbar but keep functionality */
-      ::-webkit-scrollbar {
-        width: 0px;
-        background: transparent;
-      }
-    </style>
-    <script type="module" crossorigin src="./assets/index-DUHOofP1.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-1BauMaPA.css">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script>
-      // Register Service Worker for PWA
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-              console.log('SW registered:', registration);
-            })
-            .catch((error) => {
-              console.log('SW registration failed:', error);
-            });
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>RE-Vision</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+
+    /* Splash */
+    #splash {
+      position: fixed; inset: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      transition: opacity 1s ease;
+    }
+    #splash.fade-out { opacity: 0; pointer-events: none; }
+    #splash h1 {
+      font-size: 14px;
+      letter-spacing: 6px;
+      color: #d4af37;
+      font-weight: 300;
+      text-align: center;
+    }
+    #splash h1 span { display: inline-block; margin: 0 8px; }
+
+    /* Home */
+    #home { display: none; width: 100%; text-align: center; }
+    #home.active { display: flex; flex-direction: column; align-items: center; }
+
+    .logo-wrap {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      cursor: pointer;
+      margin-bottom: 40px;
+    }
+    .retina {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 110px; height: 110px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #00ffcc, #0055ff, #ff00ee);
+      animation: hueRotate 8s infinite ease-in-out;
+      z-index: 1;
+    }
+    @keyframes hueRotate {
+      0%, 100% { filter: hue-rotate(0deg); }
+      50% { filter: hue-rotate(180deg); }
+    }
+    .logo-wrap img {
+      position: relative;
+      width: 100%; height: 100%;
+      object-fit: contain;
+      z-index: 2;
+    }
+
+    .slogan {
+      font-size: 13px;
+      letter-spacing: 4px;
+      color: #d4af37;
+      font-weight: 300;
+      margin-bottom: 60px;
+      opacity: 0;
+      animation: fadeIn 2s 1.5s forwards;
+    }
+    @keyframes fadeIn { to { opacity: 1; } }
+
+    .bottom-bar {
+      position: fixed;
+      bottom: 20px;
+      display: flex;
+      gap: 10px;
+      padding: 10px 20px;
+      border-radius: 50px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(212,175,55,0.3);
+      backdrop-filter: blur(10px);
+    }
+    .btn {
+      padding: 8px 16px;
+      border-radius: 50px;
+      border: none;
+      background: transparent;
+      color: #d4af37;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.3s;
+    }
+    .btn:hover { background: rgba(212,175,55,0.1); }
+    .btn-gold {
+      background: #d4af37;
+      color: #000;
+      font-weight: 700;
+    }
+    .btn-gold:hover { background: #e5c048; }
+
+    /* Scan Page */
+    #scan { display: none; width: 100%; min-height: 100vh; padding: 20px; }
+    #scan.active { display: block; }
+    .scan-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+    .scan-title {
+      font-size: 20px;
+      color: #d4af37;
+      font-weight: 300;
+      letter-spacing: 2px;
+    }
+    .tap-scan {
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      border: 3px solid #d4af37;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 40px auto;
+      cursor: pointer;
+      animation: pulse 2s infinite;
+      background: rgba(212,175,55,0.05);
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(212,175,55,0.3); }
+      50% { box-shadow: 0 0 40px rgba(212,175,55,0.6); }
+    }
+    .tap-scan span { color: #d4af37; font-size: 14px; letter-spacing: 2px; margin-top: 10px; }
+
+    .preview { text-align: center; margin: 20px 0; }
+    .preview img { max-width: 300px; max-height: 300px; border-radius: 20px; border: 2px solid #d4af37; }
+    .btn-analyze {
+      display: block;
+      width: 200px;
+      margin: 20px auto;
+      padding: 15px;
+      border-radius: 50px;
+      border: none;
+      background: #d4af37;
+      color: #000;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Loading */
+    #loading { display: none; text-align: center; }
+    #loading.active { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+    .spinner {
+      width: 60px; height: 60px;
+      border: 3px solid rgba(212,175,55,0.2);
+      border-top-color: #d4af37;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Results */
+    #results { display: none; width: 100%; padding: 20px; }
+    #results.active { display: block; }
+    .result-img { width: 100%; max-width: 300px; border-radius: 20px; margin: 0 auto 20px; display: block; border: 2px solid #d4af37; }
+    .result-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(212,175,55,0.3);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 15px;
+    }
+    .result-label { color: #888; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; }
+    .result-value { color: #d4af37; font-size: 18px; font-weight: 600; }
+    .result-value.green { color: #00ffcc; }
+    .result-desc { color: #ccc; font-size: 14px; line-height: 1.6; margin-top: 5px; }
+
+    input[type="file"] { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Splash -->
+  <div id="splash">
+    <h1>
+      <span>YOUR</span><span>A-EYE</span><span>FOR</span><br>
+      <span>OUR</span><span>PLANET</span>
+    </h1>
+  </div>
+
+  <!-- Home -->
+  <div id="home" class="active">
+    <div class="logo-wrap" onclick="goScan()">
+      <div class="retina"></div>
+      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='none' stroke='%23fff' stroke-width='2'/%3E%3Cellipse cx='50' cy='50' rx='25' ry='25' fill='none' stroke='%23fff' stroke-width='1.5'/%3E%3Ccircle cx='50' cy='50' r='12' fill='%23fff'/%3E%3C/svg%3E" alt="A-EYE Logo">
+    </div>
+    <p class="slogan">ACTIVATE YOUR A-EYE</p>
+    <div class="bottom-bar">
+      <button class="btn" onclick="alert('Coming soon')">Connect</button>
+      <button class="btn btn-gold">0.00 RE</button>
+      <button class="btn" onclick="alert('RE-Vision: AI-powered waste analysis for a sustainable future.')">About</button>
+    </div>
+  </div>
+
+  <!-- Scan -->
+  <div id="scan">
+    <div class="scan-header">
+      <button class="btn" onclick="goHome()">&#8592; Back</button>
+    </div>
+    <div class="scan-title" style="text-align:center; margin-bottom:20px;">MATERIAL SCAN</div>
+    
+    <div class="tap-scan" onclick="document.getElementById('fileInput').click()">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m10-10h-4M6 12H2m15.07-7.07l-2.83 2.83M9.76 9.76l-2.83-2.83m12.14 12.14l-2.83-2.83M9.76 14.24l-2.83 2.83"/></svg>
+      <span>TAP TO SCAN</span>
+    </div>
+    
+    <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
+    
+    <div class="preview" id="preview" style="display:none;">
+      <img id="previewImg" src="" alt="Preview">
+      <button class="btn-analyze" onclick="analyze()">ANALYZE</button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <p style="color:#d4af37; letter-spacing:3px; font-size:12px;">ANALYZING MATERIAL...</p>
+  </div>
+
+  <!-- Results -->
+  <div id="results">
+    <div class="scan-header">
+      <button class="btn" onclick="goHome()">&#8592; Home</button>
+      <button class="btn btn-gold" onclick="goScan()">New Scan</button>
+    </div>
+    <img class="result-img" id="resultImg" src="" alt="Analyzed">
+    
+    <div class="result-card">
+      <div class="result-label">Material</div>
+      <div class="result-value" id="rMaterial">-</div>
+    </div>
+    <div class="result-card">
+      <div class="result-label">Carbon Credit</div>
+      <div class="result-value green" id="rCarbon">-</div>
+    </div>
+    <div class="result-card">
+      <div class="result-label">RE Points</div>
+      <div class="result-value" id="rPoints">-</div>
+    </div>
+    <div class="result-card">
+      <div class="result-label">Upcycling Idea</div>
+      <div class="result-desc" id="rUpcycle">-</div>
+    </div>
+  </div>
+
+  <script>
+    // ===================== CONFIG =====================
+    // Cloudflare Worker URL - Bunu kendin değiştir
+    const WORKER_URL = 'https://re-vision-api.marangoncreative.workers.dev/api/analyze';
+    // ==================================================
+
+    let selectedImage = null;
+
+    // Splash
+    setTimeout(() => {
+      document.getElementById('splash').classList.add('fade-out');
+      setTimeout(() => document.getElementById('splash').style.display = 'none', 1000);
+    }, 3000);
+
+    function show(id) {
+      ['home','scan','loading','results'].forEach(p => document.getElementById(p).classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+    function goHome() { show('home'); }
+    function goScan() { 
+      show('scan'); 
+      document.getElementById('preview').style.display = 'none';
+      document.getElementById('fileInput').value = '';
+      selectedImage = null;
+    }
+
+    // Fotoğraf sıkıştırma
+    function compressImage(dataUrl, maxWidth = 1024, quality = 0.7) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          let w = img.width, h = img.height;
+          if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = dataUrl;
+      });
+    }
+
+    async function handleFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const compressed = await compressImage(ev.target.result);
+        selectedImage = compressed;
+        document.getElementById('previewImg').src = compressed;
+        document.getElementById('preview').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function analyze() {
+      if (!selectedImage) return;
+      show('loading');
+      
+      try {
+        const res = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageData: selectedImage })
         });
+        
+        if (!res.ok) throw new Error('Server error: ' + res.status);
+        
+        const data = await res.json();
+        
+        document.getElementById('resultImg').src = selectedImage;
+        document.getElementById('rMaterial').textContent = data.material || 'Unknown';
+        document.getElementById('rCarbon').textContent = '+' + (data.carbonCredit || 0) + ' kg CO2';
+        document.getElementById('rPoints').textContent = (data.rePoints || 0) + ' RE Token';
+        document.getElementById('rUpcycle').textContent = (data.upcyclingSuggestions || []).join('. ') || 'No suggestions';
+        
+        show('results');
+      } catch (err) {
+        alert('Analysis failed: ' + err.message);
+        show('scan');
       }
-    </script>
-  </body>
+    }
+  </script>
+</body>
 </html>
